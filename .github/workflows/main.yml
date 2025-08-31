@@ -1,44 +1,66 @@
-name: build-and-deploy
+name: build-and-deploy-aci
 
 on:
   push:
-    branches:
-      - main   # Trigger workflow on pushes to main branch
+    branches: [ main ]
+
+env:
+  IMAGE_NAME: rag-backend
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Login to Azure with Service Principal
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Build Docker image (Dockerfile is in repo root)
-      - name: Build Docker image
-        run: docker build -f ./Dockerfile . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/rag-backend:${{ github.sha }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # Push Docker image to ACR
-      - name: Push Docker image
-        run: |
-          az acr login --name ${{ secrets.ACR_NAME }}
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/rag-backend:${{ github.sha }}
+      - name: ACR Login
+        run: az acr login --name ${{ secrets.ACR_NAME }}
 
-      # Deploy to Azure Container Instance
-      - name: Deploy to Azure Container Instance
+      - name: Build and Push (linux/amd64)
         run: |
-          az container create \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --name rag-backend \
-            --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/rag-backend:${{ github.sha }} \
-            --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }} \
-            --registry-username ${{ secrets.REGISTRY_USERNAME }} \
-            --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
-            --dns-name-label rag-backend-${{ github.run_number }} \
-            --ports 8000
+          docker buildx build \
+            --platform linux/amd64 \
+            -f ./Dockerfile \
+            -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --push \
+            .
+
+      # Use azure/cli action so az is up-to-date and flags pass cleanly
+      - name: Deploy to Azure Container Instance (Linux)
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            # Clean old instance (ignore if not found)
+            az container delete --yes \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --name ${{ env.IMAGE_NAME }} || true
+
+            az container create \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --name ${{ env.IMAGE_NAME }} \
+              --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+              --os-type Linux \
+              --restart-policy Always \
+              --cpu 1 --memory 2 \
+              --ports 8000 \
+              --ip-address Public \
+              --dns-name-label ${{ env.IMAGE_NAME }}-${{ github.run_number }} \
+              --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }} \
+              --registry-username ${{ secrets.ACR_USERNAME }} \
+              --registry-password ${{ secrets.REGISTRY_PASSWORD }}
+
+            echo "FQDN:"
+            az container show \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --name ${{ env.IMAGE_NAME }} \
+              --query ipAddress.fqdn -o tsv
