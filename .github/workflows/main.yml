@@ -56,7 +56,8 @@ jobs:
               --ip-address Public \
               --dns-name-label ${{ env.IMAGE_NAME }}-${{ github.run_number }} \
               --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }} \
-               --registry-username ${{ secrets.REGISTRY_USERNAME }}
+              --registry-username ${{ secrets.REGISTRY_USERNAME }} \
+              --registry-password ${{ secrets.REGISTRY_PASSWORD }}
 
             echo "FQDN:"
             az container show \
