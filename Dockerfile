@@ -1,32 +1,30 @@
-# Use Python 3.9 slim image as base
-FROM python:3.9-slim
+# Use official lightweight Python image
+FROM python:3.9-slim AS base
 
 # Set working directory
 WORKDIR /app
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/root/.local/bin:$PATH"
 
-# Install system dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+# Install system dependencies only once
+RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file
-COPY rag-backend/requirements.txt .
+# Copy and install Python dependencies separately for caching
+COPY rag-backend/requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r /app/requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+# Copy application source code
+COPY rag-backend/ /app
 
-# Copy application code
-COPY rag-backend/ .
-
-# Expose port
+# Expose the application port
 EXPOSE 8000
 
-# Run the application
+# Use uvicorn as production server
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
