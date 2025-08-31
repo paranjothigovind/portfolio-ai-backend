@@ -137,7 +137,7 @@ class RAGSystem:
                     
                     Context: {context}
                     
-                    Please provide a helpful response based on the context above."""
+                    Please provide a helpful response based on the context above. If appropriate, suggest a follow-up question or related topic to explore further."""
                 }
             ]
             
@@ -185,7 +185,7 @@ class RAGSystem:
                     
                     Context: {context}
                     
-                    Please provide a helpful response based on the context above."""
+                    Please provide a helpful response based on the context above. If appropriate, suggest a follow-up question or related topic to explore further."""
                 }
             ]
             
