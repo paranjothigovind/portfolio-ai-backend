@@ -34,7 +34,9 @@ class RAGSystem:
             api_key = os.getenv("AZURE_OPENAI_API_KEY")
             api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
             deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
-            
+            print(
+                azure_endpoint, api_key, api_version, deployment_name
+            )
             if not all([azure_endpoint, api_key, deployment_name]):
                 raise ValueError("Azure OpenAI environment variables not properly configured")
             
