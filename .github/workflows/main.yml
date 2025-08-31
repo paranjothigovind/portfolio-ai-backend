@@ -27,7 +27,7 @@ jobs:
       # Push Docker image to ACR
       - name: Push Docker image
         run: |
-          az acr login --name ${{ secrets.REGISTRY_USERNAME }}
+          az acr login --name ${{ secrets.ACR_NAME }}
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/rag-backend:${{ github.sha }}
 
       # Deploy to Azure Container Instance
