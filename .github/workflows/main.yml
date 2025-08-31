@@ -22,13 +22,13 @@ jobs:
 
       # Build Docker image (Dockerfile is in repo root)
       - name: Build Docker image
-        run: docker build -f ./Dockerfile . -t ${{ secrets.ACR_LOGIN_SERVER }}/rag-backend:${{ github.sha }}
+        run: docker build -f ./Dockerfile . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/rag-backend:${{ github.sha }}
 
       # Push Docker image to ACR
       - name: Push Docker image
         run: |
-          az acr login --name ${{ secrets.ACR_NAME }}
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/rag-backend:${{ github.sha }}
+          az acr login --name ${{ secrets.REGISTRY_USERNAME }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/rag-backend:${{ github.sha }}
 
       # Deploy to Azure Container Instance
       - name: Deploy to Azure Container Instance
@@ -36,9 +36,9 @@ jobs:
           az container create \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --name rag-backend \
-            --image ${{ secrets.ACR_LOGIN_SERVER }}/rag-backend:${{ github.sha }} \
-            --registry-login-server ${{ secrets.ACR_LOGIN_SERVER }} \
-            --registry-username ${{ secrets.ACR_USERNAME }} \
-            --registry-password ${{ secrets.ACR_PASSWORD }} \
+            --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/rag-backend:${{ github.sha }} \
+            --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }} \
+            --registry-username ${{ secrets.REGISTRY_USERNAME }} \
+            --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
             --dns-name-label rag-backend-${{ github.run_number }} \
             --ports 8000
