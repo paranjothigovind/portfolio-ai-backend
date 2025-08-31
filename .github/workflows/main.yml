@@ -6,10 +6,6 @@ on:
 
 env:
   IMAGE_NAME: rag-backend
-  AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-  AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-  AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-  AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
 
 jobs:
   build-and-deploy:
@@ -39,12 +35,10 @@ jobs:
             --push \
             .
 
-      # Use azure/cli action so az is up-to-date and flags pass cleanly
       - name: Deploy to Azure Container Instance (Linux)
         uses: azure/cli@v2
         with:
           inlineScript: |
-            # Clean old instance (ignore if not found)
             az container delete --yes \
               --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.IMAGE_NAME }} || true
@@ -61,7 +55,12 @@ jobs:
               --dns-name-label ${{ env.IMAGE_NAME }}-${{ github.run_number }} \
               --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }} \
               --registry-username ${{ secrets.REGISTRY_USERNAME }} \
-              --registry-password ${{ secrets.REGISTRY_PASSWORD }}
+              --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
+              --environment-variables \
+                AZURE_OPENAI_ENDPOINT=${{ secrets.AZURE_OPENAI_ENDPOINT }} \
+                AZURE_OPENAI_API_KEY=${{ secrets.AZURE_OPENAI_API_KEY }} \
+                AZURE_OPENAI_API_VERSION=${{ secrets.AZURE_OPENAI_API_VERSION }} \
+                AZURE_OPENAI_DEPLOYMENT_NAME=${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
 
             echo "FQDN:"
             az container show \
