@@ -55,9 +55,7 @@ jobs:
               --ports 8000 \
               --ip-address Public \
               --dns-name-label ${{ env.IMAGE_NAME }}-${{ github.run_number }} \
-              --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }} \
-              --registry-username ${{ secrets.ACR_USERNAME }} \
-              --registry-password ${{ secrets.REGISTRY_PASSWORD }}
+              --registry-login-server ${{ secrets.REGISTRY_LOGIN_SERVER }}
 
             echo "FQDN:"
             az container show \
