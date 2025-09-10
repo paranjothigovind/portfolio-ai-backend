@@ -16,7 +16,7 @@ load_dotenv()
 
 class RAGSystem:
     def __init__(self):
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.embedding_model = SentenceTransformer('paraphrase-albert-small-v2')
         self.index = None
         self.documents = []
         self.is_initialized = False
