@@ -29,9 +29,8 @@ class RAGSystem:
             azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
             api_key = os.getenv("AZURE_OPENAI_API_KEY")
             api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
-            deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
 
-            if not all([azure_endpoint, api_key, deployment_name]):
+            if not all([azure_endpoint, api_key]):
                 raise ValueError("Missing Azure OpenAI environment variables")
 
             import httpx
@@ -57,9 +56,12 @@ class RAGSystem:
         texts = [doc["content"] for doc in self.documents]
         self.embeddings = self._compute_embeddings(texts)
 
+        if not self.embeddings:
+            print("No embeddings were computed — skipping FAISS initialization.")
+            return
+
         self.index = faiss.IndexFlatL2(len(self.embeddings[0]))
         self.index.add(np.array(self.embeddings).astype(np.float32))
-
         self.is_initialized = True
 
     def _compute_embeddings(self, texts: List[str]) -> List[List[float]]:
